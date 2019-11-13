@@ -84,7 +84,7 @@ def login():
     login_url = "https://login.tmall.com/?spm=875.7931836/B.a2226mz.1.66144265JujCnu&redirectURL=https%3A%2F%2Fwww.tmall.com%2F"
     driver.get(login_url)
     print("开始登陆")
-    time.sleep(10)
+    time.sleep(20)
 
 
 def keep_login(buy_time):
@@ -99,12 +99,41 @@ def keep_login(buy_time):
 
 
 def buy(buy_time):
+    driver.get("https://cart.taobao.com/cart.htm")
     print("当前时间{},开始执行".format(datetime.now()))
     time_gap = get_time_gap()
     print("gap:{}".format(time_gap))
+    if driver.find_element_by_id("J_SelectAll1"):
+        driver.find_element_by_id("J_SelectAll1").click()
+        print("当前时间{},已点击全选".format(datetime.now()))
     while True:
         if time_gap + time.time()*1000 > time.mktime(time.strptime(buy_time, '%Y-%m-%d %H:%M:%S'))*1000:
             print("当前时间{},开始".format(datetime.now()))
+            if driver.find_element_by_id("J_Go"):
+                driver.find_element_by_id("J_Go").click()
+                print("当前时间{},已点击结算".format(datetime.now()))
+                #print(driver.page_source)
+                if "以下宝贝已不能购买" in driver.page_source:
+                    print("当前时间{},重新进入购物车".format(datetime.now()))
+                    driver.get("https://cart.taobao.com/cart.htm")
+                    if driver.find_element_by_id("J_SelectAll1"):
+                        driver.find_element_by_id("J_SelectAll1").click()
+                        print("当前时间{},已点击全选".format(datetime.now()))
+                        continue
+
+                while True:
+                    try:
+                        driver.find_element_by_link_text('提交订单').click()
+                        print("当前时间{},已点击提交订单".format(datetime.now()))
+                        break
+                    except Exception as e:
+                        print("当前时间{},未找到提交订单按钮".format(datetime.now()))
+                        time.sleep(0.01)
+                    if time.time()*1000 > time.mktime(time.strptime(buy_time, '%Y-%m-%d %H:%M:%S'))*1000 + 60000:
+                        print("当前时间{},执行终止".format(datetime.now()))
+                        break
+        if time.time()*1000 > time.mktime(time.strptime(buy_time, '%Y-%m-%d %H:%M:%S'))*1000 + 60000:
+            print("当前时间{},执行终止".format(datetime.now()))
             break
         print("当前时间{},继续等待".format(datetime.now()))
     driver.close()
@@ -112,8 +141,7 @@ def buy(buy_time):
 
 driver = webdriver.Chrome()
 if __name__ == '__main__':
-    #buy_time = input("请输入开始时间,格式:yyyy-mm-dd HH24:MI:SS:\n")
-    buy_time = '2019-11-12 17:37:00'
+    buy_time = '2019-11-13 22:00:00'
     login()
     keep_login(buy_time)
     buy(buy_time)
